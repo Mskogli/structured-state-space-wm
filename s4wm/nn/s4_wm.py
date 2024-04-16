@@ -414,8 +414,8 @@ def _jitted_forward(
     return model.apply(
         {
             "params": params,
-            "cache": cache,
-            "prime": prime,
+            "cache": cache, # The hidden states of the SSM operating across the sequence
+            "prime": prime, # The SSM matrices, lambda, P, Q ...
         },
         image,
         action,
@@ -424,7 +424,18 @@ def _jitted_forward(
         method="encode_and_step",
     )
 
-
+@partial(jax.jit, static_argnums=(0))
+def _jitted_encode(
+    model, params, image: jax.Array
+) -> jax.Array:
+    return model.apply(
+        {
+            "params": params,
+        },
+        image,
+        method="encode",
+    )
+    
 class S4WMTorchWrapper:
     def __init__(
         self,
@@ -434,7 +445,6 @@ class S4WMTorchWrapper:
         d_pssm_blocks: int = 1024,
         d_ssm: int = 64,
         num_pssm_blocks: int = 4,
-        discrete_latent_state: bool = True,
         l_max: int = 99,
     ) -> None:
         self.d_pssm_block = d_pssm_blocks
@@ -486,15 +496,17 @@ class S4WMTorchWrapper:
             init_actions,
             init_latent,
         )
+        
+        _ = _jitted_encode(self.model, self.params, init_depth)
+        
         return
 
     def forward(
-        self, depth_imgs: torch.tensor, actions: torch.tensor, latent: jax.Array
+        self, depth_imgs: torch.tensor, actions: torch.tensor, latent: torch.tensor
     ) -> Tuple[torch.tensor, ...]:  # 2 tuple
 
-        jax_imgs, jax_actions = from_torch_to_jax(depth_imgs), from_torch_to_jax(
-            actions
-        )
+        jax_imgs, jax_actions, jax_latent = from_torch_to_jax(depth_imgs), from_torch_to_jax(actions), from_torch_to_jax(latent)
+        
         out, variables = _jitted_forward(
             self.model,
             self.params,
@@ -502,7 +514,7 @@ class S4WMTorchWrapper:
             self.prime,
             jax_imgs,
             jax_actions,
-            latent,
+            jax_latent,
         )
         self.rnn_cache = variables["cache"]
 
@@ -510,21 +522,26 @@ class S4WMTorchWrapper:
             from_jax_to_torch(out[0]),
             from_jax_to_torch(out[1]),
         )
+    
+    def encode(self, depth_imgs: torch.tensor) -> torch.tensor:
+        jax_depth_imgs = from_torch_to_jax(depth_imgs)
+        z = _jitted_encode(self.model, self.params, jax_depth_imgs)
+        return from_jax_to_torch(z)
 
     def reset_cache(self, batch_idx: Sequence) -> None:
+        batch_idx = from_torch_to_jax(batch_idx)
         for i in range(self.num_pssm_blocks):
             for j in range(2):
-                self.rnn_cache["PSSM_blocks"][f"blocks_{i}"][f"layers_{j}"]["seq"][
+                self.rnn_cache["S4_blocks"][f"blocks_{i}"][f"layers_{j}"]["seq"][
                     "cache_x_k"
                 ] = (
-                    self.rnn_cache["PSSM_blocks"][f"blocks_{i}"][f"layers_{j}"]["seq"][
+                    self.rnn_cache["S4_blocks"][f"blocks_{i}"][f"layers_{j}"]["seq"][
                         "cache_x_k"
                     ]
                     .at[jnp.array([batch_idx])]
-                    .set(jnp.ones((self.d_ssm, self.d_pssm_block), dtype=jnp.complex64))
+                    .set(jnp.zeros((self.d_ssm, self.d_pssm_block), dtype=jnp.complex64))
                 )
         return
-
 
 if __name__ == "__main__":
     # TODO: Add init code
