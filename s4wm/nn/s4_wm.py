@@ -62,7 +62,11 @@ class S4WorldModel(nn.Module):
         self.statistic_heads = {
             "embedding": nn.Sequential(
                 [
-                    nn.Dense(features=self.latent_dim),
+                    nn.Dense(features=1024),
+                    nn.silu,
+                    nn.Dense(features=512),
+                    nn.silu,
+                    nn.Dense(features=256),
                     nn.silu,
                     nn.Dense(features=self.latent_dim),
                 ]
@@ -71,7 +75,7 @@ class S4WorldModel(nn.Module):
                 [
                     nn.Dense(features=self.S4_config["d_model"]),
                     nn.silu,
-                    nn.Dense(features=self.S4_config["d_model"]),  # 1x 2024
+                    nn.Dense(features=256),  # 1x 2024
                     nn.silu,
                     nn.Dense(features=self.latent_dim),
                 ]
@@ -80,7 +84,9 @@ class S4WorldModel(nn.Module):
 
         self.input_head = nn.Sequential(
             [
-                nn.Dense(features=self.S4_config["d_model"]),
+                nn.Dense(features=128),
+                nn.silu,
+                nn.Dense(features=256),
                 nn.silu,
                 nn.Dense(features=self.S4_config["d_model"]),
             ]

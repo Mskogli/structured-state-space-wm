@@ -80,7 +80,7 @@ def split_dataset(
 if __name__ == "__main__":
 
     dataset = DepthImageDataset(
-        "/home/mihir/dev-mathias/quad_depth_imgs",
+        "/home/mathias/dev/datasets/quad_depth_imgs",
         "cuda:0",
         actions=True,
     )

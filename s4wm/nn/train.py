@@ -64,7 +64,7 @@ def create_train_state(
         {"params": init_rng, "dropout": dropout_rng},
         init_depth,
         init_actions,
-        sample_rng
+        sample_rng,
     )
 
     params = parameters["params"]
@@ -153,7 +153,12 @@ def train_epoch(state, rng, model_cls, trainloader, beta_warmup=True):
         )
         batch_losses.append(batch_loss)
 
-        wandb.log({"train/recon_loss": recon_loss.tolist(), "train/kld_loss": kld_loss.tolist()})
+        wandb.log(
+            {
+                "train/recon_loss": recon_loss.tolist(),
+                "train/kld_loss": kld_loss.tolist(),
+            }
+        )
 
     return (
         state,
@@ -182,7 +187,14 @@ def validate(state, rng, model_cls, testloader):
 
 @partial(jax.jit, static_argnums=6)
 def train_step(
-    state, drop_rng, sample_rng, batch_depth, batch_actions, batch_depth_labels, model, beta_rate=1
+    state,
+    drop_rng,
+    sample_rng,
+    batch_depth,
+    batch_actions,
+    batch_depth_labels,
+    model,
+    beta_rate=1,
 ):
 
     def loss_fn(params):
@@ -237,15 +249,10 @@ def eval_step(state, rng, batch_depth, batch_actions, batch_depth_labels, model)
             {"params": state.params, "batch_stats": state.batch_stats},
             batch_depth,
             batch_actions,
-            rng, 
+            rng,
         )
     else:
-        out = model.apply(
-            {"params": state.params},
-            batch_depth,
-            batch_actions,
-            rng
-        )
+        out = model.apply({"params": state.params}, batch_depth, batch_actions, rng)
 
     loss, _ = model.compute_loss(
         img_prior_dist=out["depth"]["recon"],
@@ -316,7 +323,7 @@ def train(
 
         if val_loss < best_loss:
 
-            run_id = f"{os.path.dirname(os.path.realpath(__file__))}/checkpoints/{dataset}/d_model={model.d_model}-lr={train.lr}-bsz={train.bsz}-latent_type={wm.latent_dist_type}_12_blocks"
+            run_id = f"{os.path.dirname(os.path.realpath(__file__))}/checkpoints/{dataset}/d_model={model.d_model}-lr={train.lr}-bsz={train.bsz}-latent_type={wm.latent_dist_type}-num_blocks={model.n_blocks}-num_layers={model.n_layers}"
             _ = checkpoints.save_checkpoint(
                 run_id,
                 state,
@@ -331,13 +338,13 @@ def train(
         if wandb is not None:
             wandb.run.summary["Best Test Loss"] = best_loss.tolist()
             wandb.run.summary["Best Epoch"] = best_epoch
-        
+
         key, train_rng, val_rng = jax.random.split(key, num=3)
 
 
 @hydra.main(version_base=None, config_path=".", config_name="train_cfg")
 def main(cfg: DictConfig) -> None:
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     os.environ["XLA_CLIENT_PREALLOCATE"] = "True"
 
     print(OmegaConf.to_yaml(cfg))
