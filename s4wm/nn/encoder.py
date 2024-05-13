@@ -137,6 +137,10 @@ class ResNetEncoder(nn.Module):
         # Mapping to classification output
         x = x.reshape(x.shape[0], x.shape[1], -1)
 
+        x = nn.Dense(features=512)(x)
+        x = nn.silu(x)
+        x = nn.Dense(features=256)(x)
+
         return x
 
 
@@ -162,7 +166,7 @@ if __name__ == "__main__":
     import time
 
     fwp_times = []
-    for _ in range(2000):
+    for _ in range(1):
         start = time.time()
         _ = jitted_forward(encoder, params["params"], random_img_batch)
         end = time.time()

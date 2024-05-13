@@ -6,7 +6,7 @@ wm:
   sample_mean: False
   image_dist_type: "MSE"
   latent_dist_type: "Gaussian"
-  latent_dim: 128
+  latent_dim: 256
   alpha: 0.7
   beta_rec: 1.0
   beta_kl: 0.2
@@ -16,9 +16,9 @@ wm:
 
 
 model:
-  d_model: 2048   
+  d_model: 1024   
   n_layers: 2
-  n_blocks: 6
+  n_blocks: 3
   dropout: 0.1
   layer:
     l_max: 99

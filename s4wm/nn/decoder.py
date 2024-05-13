@@ -249,7 +249,6 @@ class ResNetDecoder(nn.Module):
         if (
             self.block_class == ResNetBlockDecoder
         ):  # If pre-activation block, we do not apply non-linearities yet
-            # x = nn.BatchNorm()(x, use_running_average=not train)
             x = self.act_fn(x)
 
         # Creating the ResNet blocks

@@ -60,17 +60,7 @@ class S4WorldModel(nn.Module):
         )
 
         self.statistic_heads = {
-            "embedding": nn.Sequential(
-                [
-                    nn.Dense(features=1024),
-                    nn.silu,
-                    nn.Dense(features=512),
-                    nn.silu,
-                    nn.Dense(features=256),
-                    nn.silu,
-                    nn.Dense(features=self.latent_dim),
-                ]
-            ),
+            "embedding": lambda x: x,
             "hidden": nn.Sequential(
                 [
                     nn.Dense(features=self.S4_config["d_model"]),
@@ -84,18 +74,11 @@ class S4WorldModel(nn.Module):
 
         self.input_head = nn.Sequential(
             [
-                nn.Dense(features=132),
-                nn.silu,
-                nn.Dense(features=512),
+                nn.Dense(features=256),
                 nn.silu,
                 nn.Dense(features=self.S4_config["d_model"]),
             ]
         )
-
-        self.beta_warmup_schedule = [
-            self.calculate_cyclical_lr(i, 1857, 1, 0) for i in range(1700)
-        ]
-        self.beta_warmup_index = 0
 
     def compute_latent(
         self, statistics: jnp.ndarray, rng
@@ -174,35 +157,6 @@ class S4WorldModel(nn.Module):
             kl_loss,
         )
 
-    def calculate_cyclical_lr(
-        self, iteration, total_steps, num_cycles, hold_fraction=0.5
-    ):
-        step_size, hold_steps = self.calculate_step_size_and_hold_steps(
-            total_steps, num_cycles, hold_fraction
-        )
-
-        cycle = iteration // (step_size + hold_steps)
-
-        cycle_pos = iteration - (cycle * (step_size + hold_steps))
-
-        if cycle_pos < step_size:
-            return cycle_pos / step_size
-        elif cycle_pos < step_size + hold_steps:
-            return 1.0
-        else:
-            return 0.0
-
-    def calculate_step_size_and_hold_steps(
-        self, total_steps, num_cycles, hold_fraction=0.5
-    ):
-        hold_fraction = min(max(hold_fraction, 0), 1)
-        steps_per_cycle = total_steps / num_cycles
-
-        hold_steps = int(steps_per_cycle * hold_fraction)
-        step_size = steps_per_cycle - hold_steps
-
-        return step_size, hold_steps
-
     def get_latent_distribution(
         self, statistics: Union[Dict[str, jnp.ndarray], jnp.ndarray]
     ) -> tfd.Distribution:
@@ -247,7 +201,6 @@ class S4WorldModel(nn.Module):
             x = self.statistic_heads[statistics_head](x)
             mean, std = jnp.split(x, 2, -1)
             std = nn.softplus(std) + 0.1
-            print(std)
 
             return {"mean": mean, "std": std}
 
