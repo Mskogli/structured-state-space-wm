@@ -9,15 +9,15 @@ wm:
   latent_dim: 128
   alpha: 0.7
   beta_rec: 1.0
-  beta_kl: 0.1
+  beta_kl: 0.2
   clip_kl_loss: True
   kl_lower_bound: 2.0
   loss_reduction: "sum"
 
 
 model:
-  d_model: 512   
-  n_layers: 1
+  d_model: 2048   
+  n_layers: 2
   n_blocks: 6
   dropout: 0.1
   layer:

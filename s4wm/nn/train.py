@@ -4,6 +4,7 @@ import jax
 import jax.numpy as np
 import optax
 import torch
+import shutil
 
 from functools import partial
 from flax.training import checkpoints, train_state
@@ -324,6 +325,8 @@ def train(
         if val_loss < best_loss:
 
             run_id = f"{os.path.dirname(os.path.realpath(__file__))}/checkpoints/{dataset}/d_model={model.d_model}-lr={train.lr}-bsz={train.bsz}-latent_type={wm.latent_dist_type}-num_blocks={model.n_blocks}-num_layers={model.n_layers}"
+            if epoch > 0:
+                shutil.rmtree(f"{run_id}/checkpoint_{best_epoch}")
             _ = checkpoints.save_checkpoint(
                 run_id,
                 state,
@@ -344,7 +347,7 @@ def train(
 
 @hydra.main(version_base=None, config_path=".", config_name="train_cfg")
 def main(cfg: DictConfig) -> None:
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     os.environ["XLA_CLIENT_PREALLOCATE"] = "True"
 
     print(OmegaConf.to_yaml(cfg))

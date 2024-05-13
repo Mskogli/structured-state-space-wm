@@ -75,7 +75,7 @@ class S4WorldModel(nn.Module):
                 [
                     nn.Dense(features=self.S4_config["d_model"]),
                     nn.silu,
-                    nn.Dense(features=256),  # 1x 2024
+                    nn.Dense(features=512),  # 1x 2024
                     nn.silu,
                     nn.Dense(features=self.latent_dim),
                 ]
@@ -84,9 +84,9 @@ class S4WorldModel(nn.Module):
 
         self.input_head = nn.Sequential(
             [
-                nn.Dense(features=128),
+                nn.Dense(features=132),
                 nn.silu,
-                nn.Dense(features=256),
+                nn.Dense(features=512),
                 nn.silu,
                 nn.Dense(features=self.S4_config["d_model"]),
             ]
