@@ -7,7 +7,7 @@ wm:
   image_dist_type: "MSE"
   latent_dist_type: "Gaussian"
   latent_dim: 256
-  alpha: 0.7
+  alpha: 0.5
   beta_rec: 1.0
   beta_kl: 0.2
   clip_kl_loss: True
@@ -16,7 +16,7 @@ wm:
 
 
 model:
-  d_model: 1024   
+  d_model: 512   
   n_layers: 2
   n_blocks: 3
   dropout: 0.1

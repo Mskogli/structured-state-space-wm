@@ -115,7 +115,6 @@ class SequenceBlock(nn.Module):
         )
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
-        print(x.shape)
         skip = x
         if self.prenorm:
             x = self.norm(x)
@@ -158,7 +157,7 @@ class S4Layer(nn.Module):
         self.C = self.C[..., 0] + 1j * self.C[..., 1]
         self.D = self.param("D", nn.initializers.ones, (1,))
         self.step = jnp.exp(self.param("log_step", log_step_initializer(), (1,)))
-        #self.step = 0.1
+        # self.step = 0.1
 
         if not self.rnn_mode:
             self.K = kernel_DPLR(
