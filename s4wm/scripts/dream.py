@@ -17,19 +17,20 @@ def main(cfg: DictConfig) -> None:
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     torch.manual_seed(0)
 
-    model = S4WorldModel(S4_config=cfg.model, training=False, rnn_mode=True, **cfg.wm)
+    model = S4WorldModel(S4_config=cfg.model, training=False, **cfg.wm)
     _, trainloader = create_depth_dataset(batch_size=4)
     test_depth_imgs, test_actions, _ = next(iter(trainloader))
 
     test_depth_imgs = from_torch_to_jax(test_depth_imgs)
     test_actions = from_torch_to_jax(test_actions)
 
-    init_depth = jnp.zeros_like(test_depth_imgs)
-    init_actions = jnp.zeros_like(test_actions)
-
     params = model.restore_checkpoint_state(
-        "/home/mathias/dev/structured-state-space-wm/s4wm/nn/checkpoints/depth_dataset/d_model=1024-lr=0.0001-bsz=4-latent_type=disc/checkpoint_11"
+        "/home/mathias/dev/rl_checkpoints/gaussian_128"
     )["params"]
+
+    init_depth = jnp.zeros((4, 1, 135, 240, 1))
+    init_actions = jnp.zeros((4, 1, 4))
+
     cache, prime = model.init_RNN_mode(params, init_depth, init_actions)
 
     ctx_l = 90
@@ -39,6 +40,8 @@ def main(cfg: DictConfig) -> None:
     dream_actions = test_actions[:, ctx_l + 1 : ctx_l + dream_l + 1, :]
     dream_actions = jnp.zeros_like(dream_actions)
     dream_actions = dream_actions.at[:, :, 2].set(-0.645)
+
+    print("batman")
 
     out, _ = model.apply(
         {"params": params, "cache": cache, "prime": prime},

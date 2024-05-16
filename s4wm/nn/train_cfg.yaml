@@ -3,15 +3,15 @@ seed: 72
 
 wm:
   rnn_mode: False
-  sample_mean: True
+  sample_mean: False
   image_dist_type: "MSE"
-  latent_dist_type: "Gaussian"
-  latent_dim: 256
+  latent_dist_type: "Categorical"
+  latent_dim: 16384
   alpha: 0.8
   beta_rec: 1.0
-  beta_kl: 0.4
+  beta_kl: 1.0
   clip_kl_loss: True
-  kl_lower_bound: 1.0
+  kl_lower_bound: 1.5
   loss_reduction: "sum"
 
 
@@ -19,10 +19,10 @@ model:
   d_model: 512   
   n_layers: 2
   n_blocks: 3
-  dropout: 0.1
+  dropout: 0.4
   layer:
     l_max: 99
-    N: 100
+    N: 128
 
 train:
   epochs: 100
