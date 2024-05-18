@@ -356,7 +356,7 @@ class S4WorldModel(nn.Module):
         return ckpt_state
 
     def open_loop_prediction(
-        self, predicted_posterior: jnp.ndarray, action: jnp.ndarray
+        self, predicted_posterior: jnp.ndarray, action: jnp.ndarray, key
     ) -> Tuple[jnp.ndarray, ...]:  # 2 tuple
         out = {
             "z_post_pred": {"dist": None, "sample": None},
@@ -374,7 +374,7 @@ class S4WorldModel(nn.Module):
         )
         out["hidden"] = self.S4_blocks(g)
         out["z_post_pred"]["sample"], out["z_post_pred"]["dist"] = self.compute_priors(
-            out["hidden"], key=None
+            out["hidden"], key=key
         )
         out["depth_pred"] = self.reconstruct_depth(
             out["hidden"], out["z_post_pred"]["sample"]

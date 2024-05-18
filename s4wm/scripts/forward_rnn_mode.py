@@ -37,7 +37,7 @@ def _jitted_forward(
 
 
 @partial(jax.jit, static_argnums=(0))
-def dream(model, params, cache, prime, pred_posterior, action) -> jax.Array:
+def dream(model, params, cache, prime, pred_posterior, action, key) -> jax.Array:
     out, vars = model.apply(
         {
             "params": params,
@@ -46,6 +46,7 @@ def dream(model, params, cache, prime, pred_posterior, action) -> jax.Array:
         },
         pred_posterior,
         action,
+        key,
         mutable=["cache"],
         method="open_loop_prediction",
     )
@@ -54,26 +55,26 @@ def dream(model, params, cache, prime, pred_posterior, action) -> jax.Array:
 
 @hydra.main(version_base=None, config_path=".", config_name="test_cfg")
 def main(cfg: DictConfig) -> None:
-    context_length = 75
-    dream_length = 30
+    context_length = 10
+    dream_length = 20
     os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 
+    key = jax.random.PRNGKey(0)
     model = S4WorldModel(S4_config=cfg.model, training=False, **cfg.wm)
     torch.manual_seed(0)
-    key = jax.random.PRNGKey(0)
 
-    _, val_loader = create_depth_dataset(batch_size=4)
+    _, val_loader = create_depth_dataset(batch_size=8)
     test_depth_imgs, test_actions, _ = next(iter(val_loader))
 
     test_depth_imgs = from_torch_to_jax(test_depth_imgs)
     test_actions = from_torch_to_jax(test_actions)
 
-    init_depth = jnp.zeros((4, 1, 135, 240, 1))
-    init_actions = jnp.zeros((4, 1, 4))
+    init_depth = jnp.zeros((8, 1, 135, 240, 1))
+    init_actions = jnp.zeros((8, 1, 4))
 
     state = model.restore_checkpoint_state(
-        "/home/mathias/dev/rl_checkpoints/gaussian_128"
+        "/home/mathias/dev/structured-state-space-wm/s4wm/nn/checkpoints/depth_dataset/d_model=512-lr=0.0001-bsz=8-latent_type=Categorical_12_blocks/checkpoint_99"
     )
     params = state["params"]
 
@@ -81,6 +82,8 @@ def main(cfg: DictConfig) -> None:
 
     # Build context
     z_post = None
+
+    batch = 3
 
     for i in range(context_length):
         sample_key, key = jax.random.split(key, num=2)
@@ -100,7 +103,7 @@ def main(cfg: DictConfig) -> None:
 
         plt.imsave(
             f"imgs/recon_rnn_{i}.png",
-            depth_recon[5].reshape(135, 240),
+            depth_recon[batch].reshape(135, 240),
             cmap="magma",
             vmin=0,
             vmax=1,
@@ -109,7 +112,14 @@ def main(cfg: DictConfig) -> None:
         if i == context_length - 1:
             plt.imsave(
                 f"imgs/dream_rnn_0.png",
-                depth_pred[5].reshape(135, 240),
+                depth_pred[batch].reshape(135, 240),
+                cmap="magma",
+                vmin=0,
+                vmax=1,
+            )
+            plt.imsave(
+                f"imgs/dream_label_0.png",
+                test_depth_imgs[batch, i + 1].reshape(135, 240),
                 cmap="magma",
                 vmin=0,
                 vmax=1,
@@ -118,18 +128,27 @@ def main(cfg: DictConfig) -> None:
     # Open loop predictions
 
     for i in range(dream_length):
+        sample_key, key = jax.random.split(key, num=2)
         action = jnp.expand_dims(test_actions[:, i + context_length], axis=1)
-        # action = action.at[:, :, 3].set(0.5)
+        # action = action.at[:, :, 3].set(-1)
         # action = action.at[:, :, 0].set(0)
         # action = action.at[:, :, 1].set(0)
         # action = action.at[:, :, 2].set(1)
         depth_recon, z_post, variables = dream(
-            model, params, cache, prime, z_post, action
+            model, params, cache, prime, z_post, action, key
         )
         cache = variables["cache"]
         plt.imsave(
             f"imgs/dream_rnn_{i+1}.png",
-            depth_recon[5].reshape(135, 240),
+            depth_recon[batch].reshape(135, 240),
+            cmap="magma",
+            vmin=0,
+            vmax=1,
+        )
+
+        plt.imsave(
+            f"imgs/dream_label_{i+1}.png",
+            test_depth_imgs[batch, i + context_length + 1].reshape(135, 240),
             cmap="magma",
             vmin=0,
             vmax=1,
