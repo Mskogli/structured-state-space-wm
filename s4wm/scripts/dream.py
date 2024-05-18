@@ -25,7 +25,7 @@ def main(cfg: DictConfig) -> None:
     test_actions = from_torch_to_jax(test_actions)
 
     params = model.restore_checkpoint_state(
-        "/home/mathias/dev/rl_checkpoints/gaussian_128"
+        "/home/mathias/dev/structured-state-space-wm/s4wm/nn/checkpoints/depth_dataset/d_model=512-lr=0.0001-bsz=8-latent_type=Categorical_12_blocks/checkpoint_99"
     )["params"]
 
     init_depth = jnp.zeros((4, 1, 135, 240, 1))
