@@ -60,18 +60,12 @@ class S4WorldModel(nn.Module):
         )
 
         self.statistic_heads = {
-            "embedding": nn.Sequential(
-                [
-                    nn.Dense(features=self.latent_dim),
-                    nn.silu,
-                    nn.Dense(features=self.latent_dim),
-                ]
-            ),
+            "embedding": lambda x: x,
             "hidden": nn.Sequential(
                 [
                     nn.Dense(features=self.S4_config["d_model"]),
                     nn.silu,
-                    nn.Dense(features=self.S4_config["d_model"]),  # 1x 2024
+                    nn.Dense(features=512),  # 1x 2024
                     nn.silu,
                     nn.Dense(features=self.latent_dim),
                 ]
@@ -80,7 +74,7 @@ class S4WorldModel(nn.Module):
 
         self.input_head = nn.Sequential(
             [
-                nn.Dense(features=self.S4_config["d_model"]),
+                nn.Dense(features=256),
                 nn.silu,
                 nn.Dense(features=self.S4_config["d_model"]),
             ]
@@ -96,7 +90,7 @@ class S4WorldModel(nn.Module):
     ) -> Tuple[jnp.ndarray, tfd.Distribution]:
         dists = self.get_latent_distribution(statistics)
 
-        if not self.sample_mean:
+        if not self.sample_mean and rng is not None:
             sample = dists.sample(seed=rng)
         else:
             sample = dists.mode() if self.discrete_latent_state else dists.mean()
@@ -355,6 +349,32 @@ class S4WorldModel(nn.Module):
         ckpt_state = ckptr.restore(ckpt_dir, item=None)
 
         return ckpt_state
+
+    def open_loop_prediction(
+        self, predicted_posterior: jnp.ndarray, action: jnp.ndarray, key
+    ) -> Tuple[jnp.ndarray, ...]:  # 2 tuple
+        out = {
+            "z_post_pred": {"dist": None, "sample": None},
+            "depth_pred": None,
+            "hidden": None,
+        }
+        g = self.input_head(
+            jnp.concatenate(
+                (
+                    predicted_posterior,
+                    action,
+                ),
+                axis=-1,
+            )
+        )
+        out["hidden"] = self.S4_blocks(g)
+        out["z_post_pred"]["sample"], out["z_post_pred"]["dist"] = self.compute_priors(
+            out["hidden"], key=key
+        )
+        out["depth_pred"] = self.reconstruct_depth(
+            out["hidden"], out["z_post_pred"]["sample"]
+        )
+        return out
 
     # Dreaming utils
     def _build_context(

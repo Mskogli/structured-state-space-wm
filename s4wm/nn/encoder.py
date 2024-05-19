@@ -137,6 +137,10 @@ class ResNetEncoder(nn.Module):
         # Mapping to classification output
         x = x.reshape(x.shape[0], x.shape[1], -1)
 
+        x = nn.Dense(features=512)(x)
+        x = nn.silu(x)
+        x = nn.Dense(features=256)(x)
+
         return x
 
 
