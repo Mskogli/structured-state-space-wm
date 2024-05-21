@@ -15,7 +15,7 @@ from s4wm.utils.dlpack import from_torch_to_jax
 @hydra.main(version_base=None, config_path=".", config_name="test_cfg")
 def main(cfg: DictConfig) -> None:
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"]="false"
+    os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 
     model = S4WorldModel(S4_config=cfg.model, training=False, **cfg.wm)
     torch.manual_seed(0)
@@ -27,12 +27,14 @@ def main(cfg: DictConfig) -> None:
     test_actions = from_torch_to_jax(test_actions)
 
     state = model.restore_checkpoint_state(
-        "/home/mihir/dev-mathias/structured-state-space-wm/s4wm/nn/checkpoints/depth_dataset/d_model=1024-lr=0.0002-bsz=8-latent_type=Gaussian_12_blocks/checkpoint_88"
+        "/home/mathias/dev/rl_checkpoints/gaussian_128_2"
     )
     params = state["params"]
 
     print(test_depth_imgs.shape, test_actions.shape)
-    model.init(jax.random.PRNGKey(0), test_depth_imgs, test_actions, jax.random.PRNGKey(2))
+    model.init(
+        jax.random.PRNGKey(0), test_depth_imgs, test_actions, jax.random.PRNGKey(2)
+    )
     key = jax.random.PRNGKey(1)
     out = model.apply(
         {"params": params},
