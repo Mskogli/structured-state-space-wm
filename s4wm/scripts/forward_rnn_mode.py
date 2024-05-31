@@ -55,8 +55,8 @@ def dream(model, params, cache, prime, pred_posterior, action, key) -> jax.Array
 
 @hydra.main(version_base=None, config_path=".", config_name="test_cfg")
 def main(cfg: DictConfig) -> None:
-    context_length = 10
-    dream_length = 20
+    context_length = 90
+    dream_length = 50
     os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 
@@ -74,7 +74,7 @@ def main(cfg: DictConfig) -> None:
     init_actions = jnp.zeros((8, 1, 4))
 
     state = model.restore_checkpoint_state(
-        "/home/mathias/dev/structured-state-space-wm/s4wm/nn/checkpoints/depth_dataset/d_model=512-lr=0.0001-bsz=8-latent_type=Categorical_12_blocks/checkpoint_99"
+        "/home/mathias/dev/rl_checkpoints/gaussian_128_2"
     )
     params = state["params"]
 
@@ -130,10 +130,10 @@ def main(cfg: DictConfig) -> None:
     for i in range(dream_length):
         sample_key, key = jax.random.split(key, num=2)
         action = jnp.expand_dims(test_actions[:, i + context_length], axis=1)
-        # action = action.at[:, :, 3].set(-1)
-        # action = action.at[:, :, 0].set(0)
-        # action = action.at[:, :, 1].set(0)
-        # action = action.at[:, :, 2].set(1)
+        action = action.at[:, :, 3].set(0)
+        action = action.at[:, :, 0].set(0)
+        action = action.at[:, :, 1].set(0)
+        action = action.at[:, :, 2].set(0)
         depth_recon, z_post, variables = dream(
             model, params, cache, prime, z_post, action, key
         )
