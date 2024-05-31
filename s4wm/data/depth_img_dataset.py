@@ -17,7 +17,7 @@ class DepthImageDataset(Dataset):
         self.file = h5py.File(file_path, "r")
         self.device = device
         self.actions = actions
-        self.num_trajs = 16500
+        self.num_trajs = 1
         self.max_depth_value = 10
         self.min_depth_value = 0.0
 
@@ -26,10 +26,9 @@ class DepthImageDataset(Dataset):
 
     def __getitem__(self, idx) -> torch.tensor:
         depth_images = []
-        states = []
         actions = []
 
-        for i in range(100):
+        for i in range(300):
             dataset = self.file[f"trajectory_{idx}/image_{i}"]
             img_data = dataset[:]
             depth_images.append(
@@ -37,11 +36,7 @@ class DepthImageDataset(Dataset):
                 .view(1, 135, 240, 1)
                 .to(torch.device(self.device))
             )
-            states.append(
-                torch.from_numpy(dataset.attrs["states"])
-                .view(1, 16)
-                .to(torch.device(self.device))
-            )
+
             actions.append(
                 torch.from_numpy(dataset.attrs["actions"])
                 .view(1, 4)
@@ -59,8 +54,6 @@ class DepthImageDataset(Dataset):
         )
 
         acts = torch.cat(actions, dim=0)[1:]
-        sts = torch.cat(states, dim=0)[:-1]
-        extras = torch.cat([acts, sts], dim=-1)
 
         labels = imgs[1:, :].view(-1, 135 * 240)
 

@@ -55,8 +55,8 @@ def dream(model, params, cache, prime, pred_posterior, action, key) -> jax.Array
 
 @hydra.main(version_base=None, config_path=".", config_name="test_cfg")
 def main(cfg: DictConfig) -> None:
-    context_length = 90
-    dream_length = 50
+    context_length = 242
+    dream_length = 30
     os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 
@@ -64,14 +64,17 @@ def main(cfg: DictConfig) -> None:
     model = S4WorldModel(S4_config=cfg.model, training=False, **cfg.wm)
     torch.manual_seed(0)
 
-    _, val_loader = create_depth_dataset(batch_size=8)
+    _, val_loader = create_depth_dataset(batch_size=1)
     test_depth_imgs, test_actions, _ = next(iter(val_loader))
 
     test_depth_imgs = from_torch_to_jax(test_depth_imgs)
     test_actions = from_torch_to_jax(test_actions)
 
-    init_depth = jnp.zeros((8, 1, 135, 240, 1))
-    init_actions = jnp.zeros((8, 1, 4))
+    test_depth_imgs = jnp.expand_dims(test_depth_imgs, axis=0)
+    test_actions = jnp.expand_dims(test_actions, axis=0)
+
+    init_depth = jnp.zeros((1, 1, 135, 240, 1))
+    init_actions = jnp.zeros((1, 1, 4))
 
     state = model.restore_checkpoint_state(
         "/home/mathias/dev/rl_checkpoints/gaussian_128"
@@ -130,10 +133,10 @@ def main(cfg: DictConfig) -> None:
     for i in range(dream_length):
         sample_key, key = jax.random.split(key, num=2)
         action = jnp.expand_dims(test_actions[:, i + context_length], axis=1)
-        action = action.at[:, :, 3].set(1)
-        action = action.at[:, :, 0].set(0)
-        action = action.at[:, :, 1].set(0)
-        action = action.at[:, :, 2].set(0)
+        # action = action.at[:, :, 3].set(1)
+        # action = action.at[:, :, 0].set(0)
+        # action = action.at[:, :, 1].set(0)
+        # action = action.at[:, :, 2].set(0)
         depth_recon, z_post, variables = dream(
             model, params, cache, prime, z_post, action, key
         )

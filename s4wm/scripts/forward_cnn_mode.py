@@ -15,12 +15,12 @@ from s4wm.utils.dlpack import from_torch_to_jax
 @hydra.main(version_base=None, config_path=".", config_name="test_cfg")
 def main(cfg: DictConfig) -> None:
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"]="false"
+    os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 
     model = S4WorldModel(S4_config=cfg.model, training=False, **cfg.wm)
     torch.manual_seed(0)
 
-    _, trainloader = create_depth_dataset(batch_size=4)
+    _, trainloader = create_depth_dataset(batch_size=1)
     test_depth_imgs, test_actions, _ = next(iter(trainloader))
 
     test_depth_imgs = from_torch_to_jax(test_depth_imgs)
@@ -31,8 +31,17 @@ def main(cfg: DictConfig) -> None:
     )
     params = state["params"]
 
-    print(test_depth_imgs.shape, test_actions.shape)
-    model.init(jax.random.PRNGKey(0), test_depth_imgs, test_actions, jax.random.PRNGKey(2))
+    test_depth_imgs = jnp.expand_dims(test_depth_imgs, axis=0)
+    test_actions = jnp.expand_dims(test_actions, axis=0)
+
+    init_depth = jnp.zeros((1, 1, 135, 240, 1))
+    init_actions = jnp.zeros((1, 1, 4))
+    model.init(
+        jax.random.PRNGKey(0),
+        init_depth,
+        init_actions,
+        jax.random.PRNGKey(2),
+    )
     key = jax.random.PRNGKey(1)
     out = model.apply(
         {"params": params},
