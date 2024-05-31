@@ -74,7 +74,7 @@ def main(cfg: DictConfig) -> None:
     init_actions = jnp.zeros((8, 1, 4))
 
     state = model.restore_checkpoint_state(
-        "/home/mathias/dev/rl_checkpoints/gaussian_128_2"
+        "/home/mathias/dev/rl_checkpoints/gaussian_128"
     )
     params = state["params"]
 
@@ -130,7 +130,7 @@ def main(cfg: DictConfig) -> None:
     for i in range(dream_length):
         sample_key, key = jax.random.split(key, num=2)
         action = jnp.expand_dims(test_actions[:, i + context_length], axis=1)
-        action = action.at[:, :, 3].set(0)
+        action = action.at[:, :, 3].set(1)
         action = action.at[:, :, 0].set(0)
         action = action.at[:, :, 1].set(0)
         action = action.at[:, :, 2].set(0)

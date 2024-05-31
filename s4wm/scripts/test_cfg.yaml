@@ -2,8 +2,8 @@ dataset: depth_dataset
 seed: 72
 
 wm:
-  rnn_mode: False
-  sample_mean: False
+  rnn_mode: True
+  sample_mean: True
   image_dist_type: "MSE"
   latent_dist_type: "Gaussian"
   latent_dim: 256
@@ -16,13 +16,13 @@ wm:
 
 
 model:
-  d_model: 1024   
+  d_model: 512  
   n_layers: 2
-  n_blocks: 12
+  n_blocks: 3
   dropout: 0.5
   layer:
     l_max: 99
-    N: 100
+    N: 128
 
 train:
   epochs: 100
