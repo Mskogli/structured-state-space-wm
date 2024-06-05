@@ -49,16 +49,16 @@ def create_depth_dataset(
     print("[*] Creating Dataset and Generating Dataloaders")
 
     dataset = DepthImageDataset(
-        "/home/mihir/dev-mathias/back_and_forth",
+        "/home/mathias/dev/datasets/quad_depth_imgs",
         "cuda:0",
         actions=True,
     )
 
-    #train_dataset, val_dataset = split_dataset(dataset, 0.1)
-    #train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    #val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    train_dataset, val_dataset = split_dataset(dataset, 0.1)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
-    return dataset
+    return train_loader, val_loader
 
 
 Dataloaders = {

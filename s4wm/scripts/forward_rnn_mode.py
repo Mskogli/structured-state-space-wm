@@ -55,7 +55,7 @@ def dream(model, params, cache, prime, pred_posterior, action, key) -> jax.Array
 
 @hydra.main(version_base=None, config_path=".", config_name="test_cfg")
 def main(cfg: DictConfig) -> None:
-    context_length = 15
+    context_length = 60
     dream_length = 10
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
@@ -64,26 +64,22 @@ def main(cfg: DictConfig) -> None:
     model = S4WorldModel(S4_config=cfg.model, training=False, **cfg.wm)
     torch.manual_seed(0)
 
-    val_loader = create_depth_dataset(batch_size=1)
+    _, val_loader = create_depth_dataset(batch_size=8)
     test_depth_imgs, test_actions, _ = next(iter(val_loader))
 
     test_depth_imgs = from_torch_to_jax(test_depth_imgs)
     test_actions = from_torch_to_jax(test_actions)
-    
-    test_depth_imgs = jnp.expand_dims(test_depth_imgs, axis=0)
-    test_actions = jnp.expand_dims(test_actions, axis=0)
 
-    init_depth = jnp.zeros((1, 1, 135, 240, 1))
-    init_actions = jnp.zeros((1, 1, 4))
+    # test_depth_imgs = jnp.expand_dims(test_depth_imgs, axis=0)
+    # test_actions = jnp.expand_dims(test_actions, axis=0)
 
-    state = model.restore_checkpoint_state(
-        "/home/mihir/dev-mathias/structured-state-space-wm/s4wm/nn/checkpoints/depth_dataset/d_model=1024-lr=0.0001-bsz=8-latent_type=Gaussian-num_blocks=6-num_layers=2/checkpoint_192"
-    )
+    init_depth = jnp.zeros((8, 1, 135, 240, 1))
+    init_actions = jnp.zeros((8, 1, 4))
+
+    state = model.restore_checkpoint_state("/home/mathias/dev/rl_checkpoints/big-model")
     params = state["params"]
 
     cache, prime = model.init_RNN_mode(params, init_depth, init_actions)
-    
-    print(test_depth_imgs.shape)
 
     # Build context
     z_post = None
