@@ -2,7 +2,7 @@ dataset: depth_dataset
 seed: 72
 
 wm:
-  rnn_mode: False
+  rnn_mode: True
   sample_mean: True
   image_dist_type: "MSE"
   latent_dist_type: "Gaussian"
