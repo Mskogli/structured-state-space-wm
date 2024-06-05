@@ -49,7 +49,7 @@ def create_depth_dataset(
     print("[*] Creating Dataset and Generating Dataloaders")
 
     dataset = DepthImageDataset(
-        "/home/mathias/dev/aerial_gym_simulator/aerial_gym/rl_training/rl_games/hallway",
+        "/home/mathias/dev/aerial_gym_simulator/aerial_gym/rl_training/rl_games/back_and_forth",
         "cuda:0",
         actions=True,
     )

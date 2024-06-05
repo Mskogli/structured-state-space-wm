@@ -55,7 +55,7 @@ def dream(model, params, cache, prime, pred_posterior, action, key) -> jax.Array
 
 @hydra.main(version_base=None, config_path=".", config_name="test_cfg")
 def main(cfg: DictConfig) -> None:
-    context_length = 40
+    context_length = 80
     dream_length = 10
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
