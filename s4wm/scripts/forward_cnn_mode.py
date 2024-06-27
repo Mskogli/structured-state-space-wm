@@ -27,11 +27,7 @@ def main(cfg: DictConfig) -> None:
     test_actions = from_torch_to_jax(test_actions)
 
     state = model.restore_checkpoint_state(
-<<<<<<< HEAD
-        "/home/mathias/dev/rl_checkpoints/gaussian_128_2"
-=======
         "/home/mihir/dev-mathias/structured-state-space-wm/s4wm/nn/checkpoints/depth_dataset/d_model=1024-lr=0.0001-bsz=8-latent_type=Gaussian-num_blocks=6-num_layers=2/checkpoint_192"
->>>>>>> a65ad7dad6c1a8f358a5f2336df2f0e1ea7c6c97
     )
     params = state["params"]
 
