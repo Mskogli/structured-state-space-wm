@@ -347,7 +347,7 @@ def train(
 
 @hydra.main(version_base=None, config_path=".", config_name="train_cfg")
 def main(cfg: DictConfig) -> None:
-    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     # os.environ["XLA_CLIENT_PREALLOCATE"] = "True"
 
     print(OmegaConf.to_yaml(cfg))

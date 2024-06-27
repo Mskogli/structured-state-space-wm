@@ -20,14 +20,18 @@ def main(cfg: DictConfig) -> None:
     model = S4WorldModel(S4_config=cfg.model, training=False, **cfg.wm)
     torch.manual_seed(0)
 
-    _, trainloader = create_depth_dataset(batch_size=4)
+    _, trainloader = create_depth_dataset(batch_size=8)
     test_depth_imgs, test_actions, _ = next(iter(trainloader))
 
     test_depth_imgs = from_torch_to_jax(test_depth_imgs)
     test_actions = from_torch_to_jax(test_actions)
 
     state = model.restore_checkpoint_state(
+<<<<<<< HEAD
         "/home/mathias/dev/rl_checkpoints/gaussian_128_2"
+=======
+        "/home/mihir/dev-mathias/structured-state-space-wm/s4wm/nn/checkpoints/depth_dataset/d_model=1024-lr=0.0001-bsz=8-latent_type=Gaussian-num_blocks=6-num_layers=2/checkpoint_192"
+>>>>>>> a65ad7dad6c1a8f358a5f2336df2f0e1ea7c6c97
     )
     params = state["params"]
 
@@ -46,7 +50,7 @@ def main(cfg: DictConfig) -> None:
 
     pred_depth = out["depth"]["pred"].mean()
     recon_depth = out["depth"]["recon"].mean()
-    batch = 2
+    batch = 3
     print(recon_depth[0, 0].shape)
     color = "magma"
     for i in range(99):

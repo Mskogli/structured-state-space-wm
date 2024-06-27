@@ -52,7 +52,7 @@ def main(cfg: DictConfig) -> None:
     init_actions = jnp.zeros((2, 4, 4))
 
     params = model.restore_checkpoint_state(
-        "/home/mathias/dev/structured-state-space-wm/s4wm/scripts/checkpoints/depth_dataset/d_model=1024-lr=0.0001-bsz=2/checkpoint_97"
+        "/home/mathias/dev/rl_checkpoints/gaussian_128_2"
     )["params"]
 
     cache, prime = model.init_RNN_mode(params, init_depth, init_actions)
